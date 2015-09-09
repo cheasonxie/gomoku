@@ -20,7 +20,7 @@ void RandAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 
 #define EVAL_CANNOT_PUT		(-0xffffff)
 #define EVAL_NEUTRAL		(0)
-#define EVAL_CHECKMATE		(0xffff)
+#define EVAL_CHECKMATE		(0xffffff)
 #define EVAL_FACTOR_DIST_FROM_CENTER	5
 #define EVAL_FACTOR_CAN_PUT_IN_ROW		5
 
@@ -58,16 +58,16 @@ void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 			y = env->rowList[i].start.y;
 			getLocationOnDirection(&x, &y, env->rowList[i].direction, -1);
 			p = EVAL_FACTOR_CAN_PUT_IN_ROW * env->rowList[i].length;
-			p += (env->rowList[i].length == 4) ? EVAL_CHECKMATE : 0;
+			p += ((env->rowList[i].length == 4) ? EVAL_CHECKMATE : 0);
 			evalMap[y * BOARD_SIZE + x] += p;
 		}
-		if(env->rowList[i].endType & ENDTYPE_CAN_PUT){
+		if((env->rowList[i].endType >> 1) & ENDTYPE_CAN_PUT){
 			// can put after end point.
 			x = env->rowList[i].start.x;
 			y = env->rowList[i].start.y;
 			getLocationOnDirection(&x, &y, env->rowList[i].direction, env->rowList[i].length);
 			p = EVAL_FACTOR_CAN_PUT_IN_ROW * env->rowList[i].length;
-			p += (env->rowList[i].length == 4) ? EVAL_CHECKMATE : 0;
+			p += ((env->rowList[i].length == 4) ? EVAL_CHECKMATE : 0);
 			evalMap[y * BOARD_SIZE + x] += p;
 		}
 	}
@@ -90,7 +90,7 @@ void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 			p = EVAL_FACTOR_CAN_PUT_IN_ROW * env->rowList[i].length * 2;
 			evalMap[y * BOARD_SIZE + x] += p;
 		}
-		if(env->rowList[i].endType & ENDTYPE_CAN_PUT){
+		if((env->rowList[i].endType >> 1) & ENDTYPE_CAN_PUT){
 			// can put after end point.
 			x = env->rowList[i].start.x;
 			y = env->rowList[i].start.y;
@@ -120,7 +120,7 @@ void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 				evalMap[y * BOARD_SIZE + x] += p;
 			}
 		}
-		if(env->rowList[i].endType & ENDTYPE_CAN_PUT){
+		if((env->rowList[i].endType >> 1) & ENDTYPE_CAN_PUT){
 			// can put after end point.
 			x = env->rowList[i].start.x;
 			y = env->rowList[i].start.y;
@@ -133,6 +133,28 @@ void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 				evalMap[y * BOARD_SIZE + x] += p;
 			}
 		}
+	}
+	// Debug out.
+	for(i = 0; i < ROW_LIST_LENGTH; i++){
+		if(env->rowList[i].length <= 0){
+			break;
+		}
+		printf("%s row ", colorString[env->rowList[i].col]);
+		//
+		x = env->rowList[i].start.x;
+		y = env->rowList[i].start.y;
+		getLocationOnDirection(&x, &y, env->rowList[i].direction, -1);
+		p = evalMap[y * BOARD_SIZE + x];
+		printf("[%d]", p);
+		//
+		printf("%c%d, %d%c", ((env->rowList[i].endType & 1) ? '(' : '['), x, y, (((env->rowList[i].endType >> 1) & 1) ? ')' : ']'));
+		x = env->rowList[i].start.x;
+		y = env->rowList[i].start.y;
+		getLocationOnDirection(&x, &y, env->rowList[i].direction, env->rowList[i].length);
+		p = evalMap[y * BOARD_SIZE + x];
+		printf("[%d]", p);
+		//
+		printf("%d\n", env->rowList[i].length);
 	}
 	// Choose best location to put.
 	bestEval = EVAL_CANNOT_PUT;

@@ -201,7 +201,7 @@ void checkMapRows(char *board, StoneRow *rowList, int rowListLen)
 					checkMapRowsSub(board, checkMap, x, y, d, col, &count);
 					if(count > 1){
 						endType = checkMapRows_getEndType(board, x, y, d, count);
-						printf("%s row %c%d, %d%c %d %d %d\n", colorString[col], ((endType & 1) ? '(' : '['), x, y, (((endType >> 1) & 1) ? ')' : ']'), d, count, endType);
+						//printf("%s row %c%d, %d%c %d %d %d\n", colorString[col], ((endType & 1) ? '(' : '['), x, y, (((endType >> 1) & 1) ? ')' : ']'), d, count, endType);
 						rowList[rowIndex].col = col;
 						rowList[rowIndex].start.x = x;
 						rowList[rowIndex].start.y = y; 
