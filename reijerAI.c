@@ -31,7 +31,7 @@
 #define TEST_AI				3		// テストしたいAI
 
 // 現在の最強の評価値
-const int bestEvalValues[]	= { 10, 10, 10, 10, 10, 10 };
+const int bestEvalValues[]	= { 50, 120, 30, 50, 30, 90 };
 // テストしたい評価値
 const int testValues[]		= { 10, 10, 10, 10, 10, 10 };
 

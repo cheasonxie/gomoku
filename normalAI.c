@@ -128,6 +128,9 @@ void NormalAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 				x = env->rowList[i].start.x;
 				y = env->rowList[i].start.y;
 				getLocationOnDirection(&x, &y, env->rowList[i].direction, -2);
+				if(x == -1){
+					continue;
+				}
 				if(env->mainBoard[y * BOARD_SIZE + x] != STATE_NONE && env->mainBoard[y * BOARD_SIZE + x] != env->currentColor){
 					x = env->rowList[i].start.x;
 					y = env->rowList[i].start.y;
@@ -142,6 +145,9 @@ void NormalAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 				x = env->rowList[i].start.x;
 				y = env->rowList[i].start.y;
 				getLocationOnDirection(&x, &y, env->rowList[i].direction, env->rowList[i].length + 1);
+				if(x == -1){
+					continue;
+				}
 				if(env->mainBoard[y * BOARD_SIZE + x] != STATE_NONE && env->mainBoard[y * BOARD_SIZE + x] != env->currentColor){
 					x = env->rowList[i].start.x;
 					y = env->rowList[i].start.y;
@@ -203,7 +209,7 @@ int NormalAI_alphaBetaSearch(char *baseBoard, int putColor, int depthCount, int 
 					if(toX != NULL && toY != NULL){
 						*toX = x;
 						*toY = y;
-						printf("eval: %d\n", candidateEval);
+						printf("(%2d, %2d) eval: %d\n", x, y, candidateEval);
 					}
 					if(candidateEval > rootCandidateEval){
 						break;
@@ -215,7 +221,7 @@ int NormalAI_alphaBetaSearch(char *baseBoard, int putColor, int depthCount, int 
 					if(toX != NULL && toY != NULL){
 						*toX = x;
 						*toY = y;
-						printf("eval: %d\n", candidateEval);
+						printf("(%2d, %2d) eval: %d\n", x, y, candidateEval);
 					}
 					if(candidateEval < rootCandidateEval){
 						break;
