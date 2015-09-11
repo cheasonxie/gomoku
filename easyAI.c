@@ -2,27 +2,14 @@
 #include <stdlib.h>
 #include "gomoku.h"
 
-void RandAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
-{
-	int pos;
-	
-	pos = rand();
-	for(;;){
-		pos %= (BOARD_SIZE * BOARD_SIZE);
-		if(env->mainBoard[pos] == STATE_NONE){
-			break;
-		}
-		pos++;
-	}
-	to->y = pos / BOARD_SIZE;
-	to->x = pos % BOARD_SIZE;
-}
-
 #define EVAL_CANNOT_PUT		(-0xffffff)
 #define EVAL_NEUTRAL		(0)
 #define EVAL_CHECKMATE		(0xffffff)
+#define EVAL_DANGER			(0xfff)
 #define EVAL_FACTOR_DIST_FROM_CENTER	5
-#define EVAL_FACTOR_CAN_PUT_IN_ROW		5
+#define EVAL_FACTOR_CAN_PUT_IN_ROW		7
+
+int EasyAI_getRowPotential(StoneRow *row, char *board);
 
 void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 {
@@ -52,6 +39,9 @@ void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 		if(env->rowList[i].col != env->currentColor){
 			continue;
 		}
+		if(EasyAI_getRowPotential(&env->rowList[i], env->mainBoard) < 5){
+			continue;
+		}
 		if(env->rowList[i].endType & ENDTYPE_CAN_PUT){
 			// can put before start point.
 			x = env->rowList[i].start.x;
@@ -79,7 +69,13 @@ void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 		if(env->rowList[i].col == env->currentColor){
 			continue;
 		}
-		if(env->rowList[i].length < 3 || (env->rowList[i].length == 3 && env->rowList[i].endType != 3)){
+		if(env->rowList[i].length < 3){
+			continue;
+		}
+		if(env->rowList[i].length == 3 && env->rowList[i].endType != 3){
+			continue;
+		}
+		if(EasyAI_getRowPotential(&env->rowList[i], env->mainBoard) < 5){
 			continue;
 		}
 		if(env->rowList[i].endType & ENDTYPE_CAN_PUT){
@@ -88,6 +84,8 @@ void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 			y = env->rowList[i].start.y;
 			getLocationOnDirection(&x, &y, env->rowList[i].direction, -1);
 			p = EVAL_FACTOR_CAN_PUT_IN_ROW * env->rowList[i].length * 2;
+			p += ((env->rowList[i].length == 3 && env->rowList[i].endType == 3) ? (EVAL_DANGER >> 1) : 0);
+			p += ((env->rowList[i].length == 4) ? EVAL_DANGER : 0);
 			evalMap[y * BOARD_SIZE + x] += p;
 		}
 		if((env->rowList[i].endType >> 1) & ENDTYPE_CAN_PUT){
@@ -96,6 +94,8 @@ void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 			y = env->rowList[i].start.y;
 			getLocationOnDirection(&x, &y, env->rowList[i].direction, env->rowList[i].length);
 			p = EVAL_FACTOR_CAN_PUT_IN_ROW * env->rowList[i].length * 2;
+			p += ((env->rowList[i].length == 3 && env->rowList[i].endType == 3) ? (EVAL_DANGER >> 1) : 0);
+			p += ((env->rowList[i].length == 4) ? EVAL_DANGER : 0);
 			evalMap[y * BOARD_SIZE + x] += p;
 		}
 	}
@@ -105,7 +105,7 @@ void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 			break;
 		}
 		if(env->rowList[i].col == env->currentColor){
-			continue;;
+			continue;
 		}
 		if(env->rowList[i].endType & ENDTYPE_CAN_PUT){
 			// can put before start point.
@@ -117,6 +117,7 @@ void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 				x = env->rowList[i].start.x;
 				y = env->rowList[i].start.y;
 				getLocationOnDirection(&x, &y, env->rowList[i].direction, -1);
+				p += ((env->rowList[i].length >= 2) ? EVAL_DANGER : 0);
 				evalMap[y * BOARD_SIZE + x] += p;
 			}
 		}
@@ -130,6 +131,7 @@ void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 				x = env->rowList[i].start.x;
 				y = env->rowList[i].start.y;
 				getLocationOnDirection(&x, &y, env->rowList[i].direction, env->rowList[i].length);
+				p += ((env->rowList[i].length >= 2) ? EVAL_DANGER : 0);
 				evalMap[y * BOARD_SIZE + x] += p;
 			}
 		}
@@ -167,4 +169,41 @@ void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env)
 			}
 		}
 	}
+}
+
+int EasyAI_getRowPotential(StoneRow *row, char *board)
+{
+	// この列がどこまで伸びる可能性があるかを調べる。
+	int p = row->length;
+	int i, x, y;
+	// before start
+	x = row->start.x;
+	y = row->start.y;
+	for(i = 0; i < 4; i++){
+		if(x == -1){
+			break;
+		}
+		getLocationOnDirection(&x, &y, row->direction, -1);
+		if(board[y * BOARD_SIZE + x] == STATE_NONE){
+			p++;
+		} else{
+			break;
+		}
+	}
+	// after end
+	x = row->start.x;
+	y = row->start.y;
+	getLocationOnDirection(&x, &y, row->direction, row->length - 1);
+	for(i = 0; i < 4; i++){
+		getLocationOnDirection(&x, &y, row->direction, -1);
+		if(x == -1){
+			break;
+		}
+		if(board[y * BOARD_SIZE + x] == STATE_NONE || board[y * BOARD_SIZE + x] == row->col){
+			p++;
+		} else{
+			break;
+		}
+	}
+	return p;
 }

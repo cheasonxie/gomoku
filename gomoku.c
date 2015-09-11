@@ -17,18 +17,23 @@ char *colorString[] = {
 
 void (*AIList[AI_LIST_LENGTH])(StoneLocation *to, GameEnvironment *env) = {
 	RandAI_decideNextLocation,
-	EasyAI_decideNextLocation
+	EasyAI_decideNextLocation,
+	NormalAI_decideNextLocation,
+	ReijerAI_decideNextLocation
 };
 char *playerTypeString[AI_LIST_LENGTH + 1] = {
 	"Human",
 	"RandAI",
-	"EasyAI"
+	"EasyAI",
+	"NormalAI",
+	"ReijerAI"
 };
 
 int main(int argc, char *argv[])
 {
 	GameEnvironment env;
 	StoneLocation to;
+	// 内部的には座標を常にゼロオリジンで扱う。
 
 	initBoard(env.mainBoard);
 	printBoard(env.mainBoard);
@@ -45,14 +50,25 @@ int main(int argc, char *argv[])
 			// Think or Input.
 			if(env.currentPlayerType == PLAYER_TYPE_HUMAN){
 				printf("%s's turn.\n", colorString[env.currentColor]);
-				inputStoneLocation(&to);	
+				if(inputStoneLocation(&to)){
+					// revert to last turn.
+					if((env.currentColor == STATE_BLACK ? env.playerWhiteType : env.playerBlackType) != PLAYER_TYPE_HUMAN){
+						// back twice.
+						revertTurn(&env, 2);
+					} else{
+						// back once.
+						revertTurn(&env, 1);
+					}
+					printBoard(env.mainBoard);
+					continue;
+				}
 			} else if(env.currentPlayerType <= AI_LIST_LENGTH){
 				AIList[env.currentPlayerType - 1](&to, &env);
 			} else{
 				puts("Invalid player type. Abort.");
 				return 1;
 			}
-			printf("%s->(%d, %d)\n", colorString[env.currentColor], to.x, to.y);
+			printf("%s->(%d, %d)\n", colorString[env.currentColor], to.x + DISPLAY_NUM_BASE, to.y + DISPLAY_NUM_BASE);
 			
 			// Check and put stone.
 			if(putStone(env.mainBoard, to.x, to.y, env.currentColor)){
@@ -67,6 +83,7 @@ int main(int argc, char *argv[])
 				puts("################################################################");
 				continue;
 			}
+			env.history[env.turnCount] = to;
 			printBoard(env.mainBoard);
 			if(isGameEnd(&env)){
 				break;
@@ -82,11 +99,20 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-void inputStoneLocation(StoneLocation *loc)
+int inputStoneLocation(StoneLocation *loc)
 {
-	loc->x = scanIntegerRanged(0, BOARD_SIZE - 1, "X: ");
-	loc->y = scanIntegerRanged(0, BOARD_SIZE - 1, "Y: ");
-	return;
+	puts("Type next location (-1 means revert to last turn).");
+	loc->x = scanIntegerRanged(-1, BOARD_SIZE - 1 + DISPLAY_NUM_BASE, "X: ");
+	if(loc->x <= -1 + DISPLAY_NUM_BASE){
+		return 1;
+	}
+	loc->y = scanIntegerRanged(-1, BOARD_SIZE - 1 + DISPLAY_NUM_BASE, "Y: ");
+	if(loc->y <= -1 + DISPLAY_NUM_BASE){
+		return 1;
+	}
+	loc->x -= DISPLAY_NUM_BASE;
+	loc->y -= DISPLAY_NUM_BASE;
+	return 0;
 }
 
 void selectGameMode(GameEnvironment *env)
@@ -129,6 +155,23 @@ int scanIntegerRanged(int from, int to, char *message)
 	return tmp;
 }
 
+void revertTurn(GameEnvironment *env, int count)
+{
+	int i;
+	
+	if(env->turnCount < count){
+		puts("################################################################");
+		puts("You can't back before starting this game.");
+		env->turnCount--;
+		return;
+	}
+	for(i = 0; i < count; i++){
+		putStone(env->mainBoard, env->history[env->turnCount - 1 - i].x, env->history[env->turnCount - 1 - i].y, STATE_NONE);
+	}
+	env->turnCount -= (count + 1);
+	printf("Back to turn %d.", env->turnCount + 1);
+}
+
 void initBoard(char *board)
 {
 	int x, y;
@@ -146,11 +189,11 @@ void printBoard(char *board)
 	int x, y;
 	printf("    ");
 	for(x = 0; x < BOARD_SIZE; x++){
-		printf("%3d", x);
+		printf("%3d", x + DISPLAY_NUM_BASE);
 	}
 	putchar('\n');
 	for(y = 0; y < BOARD_SIZE; y++){
-		printf(" %3d ", y);
+		printf(" %3d ", y + DISPLAY_NUM_BASE);
 		for(x = 0; x < BOARD_SIZE; x++){
 			printf(" %s ", stateString[board[y * BOARD_SIZE + x]]);
 		}
@@ -167,7 +210,7 @@ int putStone(char *board, int x, int y, int state)
 	if(x < 0 || BOARD_SIZE <= x || y < 0 || BOARD_SIZE <= y){
 		return 1;
 	}
-	if(board[y * BOARD_SIZE + x]){
+	if(board[y * BOARD_SIZE + x] && state != STATE_NONE){
 		return 2;
 	}
 	board[y * BOARD_SIZE + x] = state;

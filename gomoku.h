@@ -1,3 +1,5 @@
+#define DISPLAY_NUM_BASE	0
+
 #define BOARD_SIZE	15
 #define ROW_LIST_LENGTH (BOARD_SIZE * BOARD_SIZE * 4)
 
@@ -7,7 +9,7 @@
 
 #define PLAYER_TYPE_HUMAN		0
 #define PLAYER_TYPE_AI_RAND		1
-#define AI_LIST_LENGTH			2
+#define AI_LIST_LENGTH			4
 
 #define DIRECTION_X		1
 #define DIRECTION_Y		2
@@ -40,6 +42,7 @@ struct GAME_ENVIRONMENT {
 	int playerWhiteWins;
 	char mainBoard[BOARD_SIZE*BOARD_SIZE];
 	StoneRow rowList[ROW_LIST_LENGTH];
+	StoneLocation history[BOARD_SIZE*BOARD_SIZE];
 	int turnCount;	// even: black, odd: white
 	int gameCount;
 	int gameCountLimit;
@@ -52,9 +55,10 @@ extern char *colorString[];
 extern char *playerTypeString[];
 
 // @gomoku.c
-void inputStoneLocation(StoneLocation *loc);
+int inputStoneLocation(StoneLocation *loc);
 void selectGameMode(GameEnvironment *env);
 int scanIntegerRanged(int from, int to, char *message);
+void revertTurn(GameEnvironment *env, int count);
 void initBoard(char *board);
 void printBoard(char *board);
 int putStone(char *board, int x, int y, int state);
@@ -64,6 +68,11 @@ int checkMapRows_getEndType(char *board, int x, int y, int d, int count);
 void getLocationOnDirection(int *x, int *y, int d, int count);
 int isGameEnd(GameEnvironment *env);
 
-// @gomokuai.c
+// @randAI.c
 void RandAI_decideNextLocation(StoneLocation *to, GameEnvironment *env);
+// @easyAI.c
 void EasyAI_decideNextLocation(StoneLocation *to, GameEnvironment *env);
+// @normalAI.c
+void NormalAI_decideNextLocation(StoneLocation *to, GameEnvironment *env);
+// @reijerAI.c
+void ReijerAI_decideNextLocation(StoneLocation *to, GameEnvironment *env);
