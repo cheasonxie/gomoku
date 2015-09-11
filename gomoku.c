@@ -333,11 +333,11 @@ int isGameEnd(GameEnvironment *env)
 		if(env->rowList[i].length == 0){
 			break;
 		}
-		if(env->rowList[i].length == 5){
+		if(env->rowList[i].length >= 5){
 			break;
 		}
 	}
-	if(i != ROW_LIST_LENGTH && env->rowList[i].length == 5){
+	if(i != ROW_LIST_LENGTH && env->rowList[i].length >= 5){
 		puts("Game end.");
 		printf("WINNER is %s !\n", colorString[env->currentColor]);
 		if(env->currentColor == STATE_BLACK){
