@@ -174,7 +174,7 @@ int NormalAI_alphaBetaSearch(char *baseBoard, int putColor, int depthCount, int 
 {
 	// ボード上全範囲の中で最大の評価値を返す。
 	// x, yがNULLでない場合、その最大評価値が存在する座標を代入する。
-	int candidateEval, tmpEval, sign;
+	int candidateEval, tmpEval;
 	int colAfter = (putColor == STATE_BLACK ? STATE_WHITE : STATE_BLACK);
 	int x, y;
 	char checkMap[BOARD_SIZE * BOARD_SIZE];

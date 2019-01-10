@@ -29,7 +29,7 @@ char *playerTypeString[AI_LIST_LENGTH + 1] = {
 	"ReijerAI"
 };
 
-int main(int argc, char *argv[])
+int main()
 {
 	GameEnvironment env;
 	StoneLocation to;
@@ -195,7 +195,7 @@ void printBoard(char *board)
 	for(y = 0; y < BOARD_SIZE; y++){
 		printf(" %3d ", y + DISPLAY_NUM_BASE);
 		for(x = 0; x < BOARD_SIZE; x++){
-			printf(" %s ", stateString[board[y * BOARD_SIZE + x]]);
+			printf(" %s ", stateString[(int)board[y * BOARD_SIZE + x]]);
 		}
 		putchar('\n');
 	}
